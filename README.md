@@ -2,13 +2,18 @@
 
 **Try it:** https://sarahfoxall.github.io/murmuration/
 
-Also in this repo: [Murmuration still](#murmuration-still), for static murmuration images.
+Two tools on one page. Switch between them with the bar at the top:
+
+- **Animated** ([#animated](https://sarahfoxall.github.io/murmuration/#animated)): a flock that flies across the frame, for video.
+- **Still** ([#still](https://sarahfoxall.github.io/murmuration/#still)): static murmuration images. See [Murmuration still](#murmuration-still).
+
+Each tool keeps its settings while you switch.
 
 A starling murmuration you can shape and export. The flock swoops in from the left on long, broad arcs, morphing gradually as it crosses the frame, and leaves on the right. The motion is built on field research into real starling flocks.
 
 ## Use it
 
-Open `index.html` in Chrome, Edge or Firefox. Safari works for viewing; video recording depends on browser support. It's a single file, with no install, no server and no external assets.
+Open the link above, or open `animated.html` directly, in Chrome, Edge or Firefox. Safari works for viewing; video recording depends on browser support. It's a single file, with no install, no server and no external assets.
 
 - **Timeline:** play, pause and restart, and drag the scrubber to any point in the flight.
 - **Record video (WebM):** records the whole flight at full resolution. It starts and ends on an empty frame, so it also loops cleanly. Keep the tab visible while it records.
@@ -38,7 +43,7 @@ Each rule below comes from studies of real starling flocks:
 
 ## Editing the code
 
-Everything lives in `index.html`: styles and the control panel at the top, the animation in the `<script>` at the bottom.
+The animation lives in `animated.html`: styles and the control panel at the top, the animation in the `<script>` at the bottom.
 
 - `buildScene`: the route (a few slow waves, flown at constant speed), banking, and the slow timing of each shape change.
 - `buildParticles`: where each bird sits in the sheet.
@@ -47,9 +52,9 @@ Everything lives in `index.html`: styles and the control panel at the top, the a
 
 ## Murmuration still
 
-**Try it:** https://sarahfoxall.github.io/murmuration/still/
+**Try it:** https://sarahfoxall.github.io/murmuration/#still
 
-A companion tool for static murmuration images for slides, social and web, at 1920 × 1080. It lives in `still/index.html` and is also a single file.
+A companion tool for static murmuration images for slides, social and web, at 1920 × 1080. It lives in `still/index.html` and is also a single file. `index.html` is the page with the switch at the top.
 
 - **Shape:** five starting forms (Crescent, Sail, Ribbon, Ring, Cloud), then Width, Height, Bend, Twist, Fold, Viewing angle, Density balance and Edge softness.
 - **Dots:** Flock size, Dot size and Depth shading (dots further back fade).

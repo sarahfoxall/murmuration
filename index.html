@@ -2,509 +2,82 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Murmuration</title>
 <style>
 :root {
   color-scheme: light;
-  --ground: #F0EEED; --panel: #FFFFFF; --ink: #201F1D; --ink-muted: #6B665E; --line: rgba(32,31,29,.13);
-  --stage: #E4E1DF; --accent: #0C505D; --accent-hover: #0D2828; --accent-ink: #FFFFFF; --focus: #0A7891; --field: #F8F7F7;
-  box-sizing: border-box;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --ground: #F0EEED; --bar: #FFFFFF; --ink: #201F1D; --ink-muted: #6B665E; --line: rgba(32,31,29,.13);
+  --accent: #0C505D; --accent-ink: #FFFFFF; --focus: #0A7891;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root {
     color-scheme: dark;
-    --ground: #0D2828; --panel: #112F2F; --ink: #F8F7F7; --ink-muted: rgba(248,247,247,.72); --line: rgba(255,255,255,.14);
-    --stage: #0A2121; --accent: #C9FEFF; --accent-hover: #E5FFFF; --accent-ink: #0D2828; --focus: #C9FEFF; --field: #0D2828;
+    --ground: #0D2828; --bar: #112F2F; --ink: #F8F7F7; --ink-muted: rgba(248,247,247,.72); --line: rgba(255,255,255,.14);
+    --accent: #C9FEFF; --accent-ink: #0D2828; --focus: #C9FEFF;
   }
 }
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --ground: #0D2828; --panel: #112F2F; --ink: #F8F7F7; --ink-muted: rgba(248,247,247,.72); --line: rgba(255,255,255,.14);
-  --stage: #0A2121; --accent: #C9FEFF; --accent-hover: #E5FFFF; --accent-ink: #0D2828; --focus: #C9FEFF; --field: #0D2828;
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  display: grid; grid-template-rows: auto minmax(0, 1fr);
+  background: var(--ground); color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px;
+  -webkit-font-smoothing: antialiased;
 }
-*, *::before, *::after { box-sizing: inherit; }
-[hidden] { display: none !important; }
-html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
-body { height: 100%; margin: 0; background: var(--ground); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
-.app { display: grid; grid-template-columns: minmax(0, 1fr) 340px; height: 100%; }
-.stagewrap { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; background: var(--stage); }
-.stage { position: relative; display: flex; align-items: center; justify-content: center; min-height: 0; overflow: hidden; }
-.frame { line-height: 0; box-shadow: 0 1px 2px rgba(13,40,40,.08), 0 8px 32px rgba(13,40,40,.12); }
-.frame canvas { display: block; }
-.timeline { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 20px 16px; }
-.phases { position: relative; height: 20px; }
-.phases input { position: absolute; inset: 0; width: 100%; margin: 0; accent-color: var(--focus); opacity: 0; cursor: pointer; z-index: 2; }
-.track { position: absolute; left: 0; right: 0; top: 7px; height: 6px; border-radius: 3px; overflow: hidden; background: var(--line); }
-.track span { display: block; height: 100%; width: 0; background: rgba(10,120,145,.75); }
-.playhead { position: absolute; top: 0; width: 2px; height: 20px; background: var(--ink); border-radius: 1px; pointer-events: none; z-index: 1; }
-.phases:focus-within .track { outline: 2px solid var(--focus); outline-offset: 3px; }
-.time { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; color: var(--ink-muted); min-width: 64px; text-align: right; }
-.panel { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; min-height: 0; }
-.panel header { padding: 22px 22px 6px; }
-.panel h1 { font-weight: 400; font-size: 24px; line-height: 1.15; letter-spacing: -.02em; margin: 0 0 4px; }
-.panel header p { margin: 0; color: var(--ink-muted); font-size: 13px; }
-section { padding: 16px 22px 18px; border-top: 1px solid var(--line); }
-section:first-of-type { border-top: 0; }
-h2 { font-size: 13px; font-weight: 600; margin: 0 0 12px; }
-.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
-.label, label { font-size: 13px; }
-.swatch { position: relative; width: 74px; height: 36px; border-radius: 8px; border: 1px solid var(--line); overflow: hidden; }
-.swatch input { position: absolute; inset: -8px; width: calc(100% + 16px); height: calc(100% + 16px); border: 0; padding: 0; cursor: pointer; background: none; }
-.swatch:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
-.slider { display: grid; grid-template-columns: 1fr 150px 44px; gap: 10px; align-items: center; margin-bottom: 10px; }
-.slider input { width: 150px; accent-color: var(--focus); }
-.slider output { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; color: var(--ink-muted); text-align: right; }
-select { font: inherit; font-size: 13px; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 8px; height: 36px; padding: 0 10px; }
-.btns { display: flex; flex-wrap: wrap; gap: 8px; }
-button { font: inherit; font-size: 13px; font-weight: 500; height: 36px; padding: 0 14px; border-radius: 8px; cursor: pointer; border: 1px solid var(--line); background: var(--field); color: var(--ink); }
-button:hover { border-color: var(--ink-muted); }
-button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-button:disabled { opacity: .45; cursor: not-allowed; }
-button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.icon { width: 40px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
-.check { display: flex; align-items: center; gap: 10px; font-size: 13px; margin-bottom: 10px; cursor: pointer; }
-.check input { width: 18px; height: 18px; accent-color: var(--focus); margin: 0; }
-.status { font-size: 12px; color: var(--ink-muted); margin-top: 10px; min-height: 1.4em; }
-.note { font-size: 12px; color: var(--ink-muted); margin: 0 0 12px; }
+header {
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  padding: 10px 20px; background: var(--bar); border-bottom: 1px solid var(--line);
+}
+h1 { font-size: 18px; font-weight: 500; letter-spacing: -.01em; margin: 0; }
+nav { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 3px; }
+nav a {
+  display: block; padding: 6px 14px; border-radius: 7px; color: var(--ink); text-decoration: none; font-size: 13px; font-weight: 500;
+}
+nav a:hover { background: var(--line); }
+nav a[aria-current="page"] { background: var(--accent); color: var(--accent-ink); }
+nav a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+main { position: relative; min-height: 0; }
+iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: var(--ground); }
+iframe[hidden] { display: none; }
 @media (max-width: 860px) {
-  .app { grid-template-columns: 1fr; height: auto; }
-  body { height: auto; }
-  .stagewrap { height: 70vh; min-height: 440px; }
-  .panel { border-left: 0; border-top: 1px solid var(--line); }
-  .timeline { padding: 10px 12px 12px; }
+  header { padding: 10px 12px; gap: 10px; }
 }
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="stagewrap">
-    <main class="stage" id="stage" aria-label="Preview">
-      <div class="frame"><canvas id="view" role="img" aria-label="Animated murmuration: a flock of dots twisting and folding as it flies"></canvas></div>
-    </main>
-    <div class="timeline">
-      <button type="button" class="icon primary" id="play" aria-label="Pause">
-        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" id="play-icon"><rect x="2" y="1" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="8.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/></svg>
-      </button>
-      <button type="button" class="icon" id="restart" aria-label="Restart from the beginning">
-        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 2v4h4M3.4 5.8A5 5 0 1 1 2 8.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="phases">
-        <div class="track"><span id="progress"></span></div>
-        <div class="playhead" id="playhead"></div>
-        <input type="range" id="scrub" min="0" max="1000" step="1" value="0" aria-label="Timeline position">
-      </div>
-      <div class="time" id="time">0.0 s</div>
-    </div>
-  </div>
-
-  <aside class="panel">
-    <header>
-      <h1>Murmuration</h1>
-      <p>A starling murmuration that sweeps in from the left, turns and folds, and leaves on the right. Shape it, then save a video or a still frame.</p>
-    </header>
-
-    <section aria-labelledby="h-col">
-      <h2 id="h-col">Colours</h2>
-      <div class="row"><span class="label">Background</span><div class="swatch"><input type="color" id="c-bg" aria-label="Background colour"></div></div>
-      <div class="row"><span class="label">Dots</span><div class="swatch"><input type="color" id="c-dot" aria-label="Dot colour"></div></div>
-    </section>
-
-    <section aria-labelledby="h-flock">
-      <h2 id="h-flock">Flock</h2>
-      <div class="slider"><label for="s-count">Dots</label><input type="range" id="s-count" min="500" max="8000" step="100"><output id="o-count"></output></div>
-      <div class="slider"><label for="s-size">Dot size</label><input type="range" id="s-size" min="0.4" max="2.5" step="0.05"><output id="o-size"></output></div>
-      <div class="slider"><label for="s-fsize">Flock size</label><input type="range" id="s-fsize" min="0.5" max="1.6" step="0.01"><output id="o-fsize"></output></div>
-      <div class="slider"><label for="s-flow">Twist and fold</label><input type="range" id="s-flow" min="0" max="1.5" step="0.01"><output id="o-flow"></output></div>
-      <div class="slider"><label for="s-morph">Morph speed</label><input type="range" id="s-morph" min="0.3" max="2.5" step="0.01"><output id="o-morph"></output></div>
-      <div class="btns"><button type="button" id="reseed">New flock</button></div>
-    </section>
-
-    <section aria-labelledby="h-motion">
-      <h2 id="h-motion">Motion</h2>
-      <div class="slider"><label for="s-len">Length</label><input type="range" id="s-len" min="6" max="12" step="0.5"><output id="o-len"></output></div>
-      <div class="slider"><label for="s-turn">Turning</label><input type="range" id="s-turn" min="0" max="1" step="0.01"><output id="o-turn"></output></div>
-      <div class="slider"><label for="s-wave">Turn spread</label><input type="range" id="s-wave" min="0" max="1" step="0.01"><output id="o-wave"></output></div>
-      <p class="note">Turn spread is how slowly each turn passes through the flock, which bends it. New flock picks new birds and a new route.</p>
-    </section>
-
-    <section aria-labelledby="h-out">
-      <h2 id="h-out">Output</h2>
-      <div class="row">
-        <label for="size">Size</label>
-        <select id="size">
-          <option value="slide">Slide, 1920 × 1080</option>
-          <option value="social">Social, 1080 × 1350</option>
-          <option value="story">Story, 1080 × 1920</option>
-          <option value="square">Square, 1080 × 1080</option>
-        </select>
-      </div>
-      <p class="note">Video export records the whole flight at the chosen size.</p>
-      <div class="btns">
-        <button type="button" class="primary" id="record">Record video (WebM)</button>
-        <button type="button" id="snap">Save frame (PNG)</button>
-      </div>
-      <div class="status" id="status" role="status" aria-live="polite"></div>
-    </section>
-  </aside>
-</div>
-
+<header>
+  <h1>Murmuration</h1>
+  <nav aria-label="Murmuration type">
+    <a href="#animated" data-tool="animated">Animated</a>
+    <a href="#still" data-tool="still">Still</a>
+  </nav>
+</header>
+<main id="main"></main>
 <script>
 (function () {
   "use strict";
-  var SIZES = { slide: [1920, 1080], social: [1080, 1350], story: [1080, 1920], square: [1080, 1080] };
-  var state = {
-    size: "slide", bg: "#0D2828", dot: "#FFFA66",
-    count: 5000, dotSize: 0.95, flockSize: 1, twist: 0.85,
-    duration: 8, turning: 0.75, spread: 0.65, morph: 1, grain: 0.05, seed: 42
+  var TOOLS = {
+    animated: { src: "animated.html", title: "Animated" },
+    still: { src: "still/", title: "Still" }
   };
-  var TAU = 6.283185307179586;
-  var FOLLOW = 0.8;                              // share of the flock's length that trails along the route
-  var F = 2.4;                                   // camera distance, in frame heights (perspective)
-
-  function $(id) { return document.getElementById(id); }
-  function hexToRgb(h) { h = h.replace("#", ""); return [parseInt(h.substr(0, 2), 16), parseInt(h.substr(2, 2), 16), parseInt(h.substr(4, 2), 16)]; }
-  function rng(seed) { var s = seed >>> 0 || 1; return function () { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
-  function gauss(R) { var u = R() || 1e-9, v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v); }
-  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
-
-  // =====================================================================================
-  // The model, following field studies of starling flocks:
-  //  - A flock is a thin sheet with stable proportions of about 1 : 3 : 6 (thickness : width : length),
-  //    denser at its border than in the middle (Ballerini et al. 2008).
-  //  - Birds hold a near-constant speed and turn on equal-radius (parallel) paths, so the sheet keeps its
-  //    orientation in the sky while the direction of travel swings: a wide flock becomes a long one after
-  //    a 90° turn (Hemelrijk & Hildenbrandt 2011; Attanasi et al. 2015).
-  //  - A turn starts at one tip of the flock and sweeps through it as an undamped wave, two to four times
-  //    faster than the birds fly (Attanasi et al. 2014). Birds the wave hasn't reached yet keep flying
-  //    straight, which bends and stretches the flock mid-turn.
-  //  - The flock banks into turns. (Real flocks also flash as wings catch the light; that is left out
-  //    on purpose, so brightness comes only from how densely the dots overlap.)
-  // =====================================================================================
-
-  // ---------- Scene: the route and the flock's dimensions ----------
-  var A = 16 / 9, U = 1, S = null, DT = 1 / 240, T0 = -4;
-  function buildScene() {
-    var sz = SIZES[state.size], R = rng(state.seed * 7 + 3), i, j;
-    A = sz[0] / sz[1]; U = Math.min(A, 1);
-    var La = 0.92 * U * state.flockSize, Wb = La / 2, Tc = La / 6;
-    var margin = 0.75 * La + 0.1, tr = state.turning;
-    // Route: long, broad swoops from off the left edge to off the right edge. Built from a few slow waves,
-    // so the flock always moves forward and every change of direction is a wide, easy arc.
-    var ym = Math.min(0.27, 0.5 - 0.36 * Wb - 0.06), amp = 0.4 + 0.6 * tr;
-    var k1 = 1.8 + 2 * tr, k2 = k1 * 1.7, py1 = R() * TAU, py2 = R() * TAU, px = R() * TAU, pz = R() * TAU, aw = R() < 0.5 ? 1 : -1;
-    var poly = [], c, NP = 1600;
-    for (i = 0; i <= NP; i++) {
-      var u = i / NP;
-      var x = -margin + (A + 2 * margin) * u + A * 0.13 * tr * Math.sin(TAU * u + px);
-      var yw = 0.78 * Math.sin(Math.PI * k1 * u + py1) + 0.22 * Math.sin(Math.PI * k2 * u + py2);
-      var y = 0.5 + aw * ym * amp * yw / 1.0;
-      var z = 0.9 * tr * Math.sin(Math.PI * 2 * u + pz);
-      poly.push([x, y, z]);
+  var frames = {}, main = document.getElementById("main");
+  // Each tool loads the first time it's opened and keeps its settings while you switch between them
+  function show(id) {
+    if (!TOOLS[id]) id = "animated";
+    if (!frames[id]) {
+      var f = document.createElement("iframe");
+      f.src = TOOLS[id].src; f.title = TOOLS[id].title;
+      main.appendChild(f); frames[id] = f;
     }
-    var cum = [0];
-    for (i = 1; i < poly.length; i++) cum.push(cum[i - 1] + Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1], poly[i][2] - poly[i - 1][2]));
-    var Ltot = cum[cum.length - 1], L = state.duration, v = Ltot / L;    // constant flight speed
-    // Sample position, heading, curvature and bank against time
-    var N = Math.ceil((L + 8) / DT) + 1, pos = new Float32Array(N * 3), hd = new Float32Array(N * 3), kap = new Float32Array(N * 3), roll = new Float32Array(N);
-    var k = 0, last = poly.length - 1;
-    var H0 = [poly[1][0] - poly[0][0], poly[1][1] - poly[0][1], poly[1][2] - poly[0][2]], h0 = Math.hypot(H0[0], H0[1], H0[2]); H0 = [H0[0] / h0, H0[1] / h0, H0[2] / h0];
-    var Hn = [poly[last][0] - poly[last - 1][0], poly[last][1] - poly[last - 1][1], poly[last][2] - poly[last - 1][2]], hm = Math.hypot(Hn[0], Hn[1], Hn[2]); Hn = [Hn[0] / hm, Hn[1] / hm, Hn[2] / hm];
-    for (i = 0; i < N; i++) {
-      var s = v * (T0 + i * DT), o;
-      if (s <= 0) o = [poly[0][0] + H0[0] * s, poly[0][1] + H0[1] * s, poly[0][2] + H0[2] * s];
-      else if (s >= Ltot) o = [poly[last][0] + Hn[0] * (s - Ltot), poly[last][1] + Hn[1] * (s - Ltot), poly[last][2] + Hn[2] * (s - Ltot)];
-      else {
-        while (k < last - 1 && cum[k + 1] < s) k++;
-        var f = (s - cum[k]) / (cum[k + 1] - cum[k] || 1);
-        o = [poly[k][0] + (poly[k + 1][0] - poly[k][0]) * f, poly[k][1] + (poly[k + 1][1] - poly[k][1]) * f, poly[k][2] + (poly[k + 1][2] - poly[k][2]) * f];
-      }
-      pos[i * 3] = o[0]; pos[i * 3 + 1] = o[1]; pos[i * 3 + 2] = o[2];
-    }
-    // Smooth the route (three box passes ≈ Gaussian) so turns keep a realistic minimum radius
-    var tmp = new Float32Array(N * 3), Wsm = Math.round(0.12 / DT);
-    for (var pass = 0; pass < 3; pass++) {
-      for (c = 0; c < 3; c++) {
-        var acc = 0, cntb = 0;
-        for (i = 0; i < Math.min(N, Wsm); i++) { acc += pos[i * 3 + c]; cntb++; }
-        for (i = 0; i < N; i++) {
-          if (i + Wsm < N) { acc += pos[(i + Wsm) * 3 + c]; cntb++; }
-          if (i - Wsm - 1 >= 0) { acc -= pos[(i - Wsm - 1) * 3 + c]; cntb--; }
-          tmp[i * 3 + c] = acc / cntb;
-        }
-      }
-      pos.set(tmp);
-    }
-    for (i = 0; i < N; i++) {
-      var a = Math.max(0, i - 2), b = Math.min(N - 1, i + 2), dx = pos[b * 3] - pos[a * 3], dy = pos[b * 3 + 1] - pos[a * 3 + 1], dz = pos[b * 3 + 2] - pos[a * 3 + 2], m = Math.hypot(dx, dy, dz) || 1;
-      hd[i * 3] = dx / m; hd[i * 3 + 1] = dy / m; hd[i * 3 + 2] = dz / m;
-    }
-    // Curvature, smoothed over ~0.2 s so banking is calm
-    var raw = new Float32Array(N * 3), W = Math.round(0.1 / DT);
-    for (i = 1; i < N - 1; i++) for (c = 0; c < 3; c++) raw[i * 3 + c] = (hd[(i + 1) * 3 + c] - hd[(i - 1) * 3 + c]) / (2 * v * DT);
-    for (i = 0; i < N; i++) {
-      var sx = 0, sy = 0, sz2 = 0, cnt = 0;
-      for (j = Math.max(0, i - W); j <= Math.min(N - 1, i + W); j++) { sx += raw[j * 3]; sy += raw[j * 3 + 1]; sz2 += raw[j * 3 + 2]; cnt++; }
-      kap[i * 3] = sx / cnt; kap[i * 3 + 1] = sy / cnt; kap[i * 3 + 2] = sz2 / cnt;
-      // Bank: roll towards the inside of the turn (side vector = heading × up)
-      var hx = hd[i * 3], hy = hd[i * 3 + 1], hz = hd[i * 3 + 2];
-      var ux = -hx * -hy, uy = -1 - hy * -hy, uz = -hz * -hy, um = Math.hypot(ux, uy, uz) || 1; ux /= um; uy /= um; uz /= um;
-      var sxv = hy * uz - hz * uy, syv = hz * ux - hx * uz, szv = hx * uy - hy * ux;
-      roll[i] = 1.25 * Math.tanh((kap[i * 3] * sxv + kap[i * 3 + 1] * syv + kap[i * 3 + 2] * szv) / 3.5);
-    }
-    // Slow drift of the sheet's orientation in the sky (how it tilts towards and away from us)
-    var ph = []; for (i = 0; i < 20; i++) ph.push(R() * TAU);
-    var wv = []; for (i = 0; i < 6; i++) wv.push(Math.PI * (1.1 + R() * 1.1) * state.morph / L);   // each shape change unfolds smoothly; Morph speed scales how many happen
-    S = { La: La, Wb: Wb, Tc: Tc, v: v, L: L, N: N, pos: pos, hd: hd, kap: kap, roll: roll, ph: ph, wv: wv,
-          cs: v * (4.2 - 3.4 * state.spread), cx: A / 2 };
-  }
-
-  // ---------- Birds: fixed places in a thin, border-dense sheet ----------
-  var P = null;
-  function buildParticles() {
-    var n = state.count, R = rng(state.seed), i;
-    P = { n: n, x: new Float32Array(n), y: new Float32Array(n), vx: new Float32Array(n), vy: new Float32Array(n),
-      a: new Float32Array(n), b: new Float32Array(n), c: new Float32Array(n), th: new Float32Array(n), ph: new Float32Array(n), w: new Float32Array(n),
-      k: new Float32Array(n), d: new Float32Array(n), al: new Float32Array(n),
-      tx: new Float32Array(n), ty: new Float32Array(n), sc: new Float32Array(n) };
-    for (i = 0; i < n; i++) {
-      var gx = gauss(R), gy = gauss(R), gz = gauss(R), m = Math.hypot(gx, gy, gz) || 1, r = Math.pow(R(), 0.22);   // more birds near the border
-      P.a[i] = gx / m * r; P.b[i] = gy / m * r; P.c[i] = gz / m * r; P.th[i] = Math.atan2(P.b[i], P.a[i]);
-      P.ph[i] = R() * TAU; P.w[i] = 2 + R() * 3;
-      var k = 40 + R() * 30; P.k[i] = k; P.d[i] = 2 * Math.sqrt(k) * (0.7 + R() * 0.2);
-      P.al[i] = 0.55 + R() * 0.45;
-    }
-  }
-
-  // ---------- Targets ----------
-  function computeTargets(tt) {
-    var n = P.n, ph = S.ph, wv = S.wv, tw = state.twist, La = S.La, Wb = S.Wb, Tc = S.Tc, v = S.v, cs = S.cs, i;
-    // Sheet orientation: tilted towards us, rolling, yawing and turning in the picture plane
-    var fi = clamp(Math.round((tt - T0) / DT), 0, S.N - 1);
-    var rx = 0.62 + tw * (0.95 * Math.sin(wv[0] * tt + ph[0]) + 0.35 * Math.sin(wv[1] * tt + ph[1])) + 0.45 * S.roll[fi];
-    var ry = tw * 0.7 * Math.sin(wv[2] * tt + ph[2]), rz = tw * 0.5 * Math.sin(wv[3] * tt + ph[3]);
-    var cx = Math.cos(rx), sx = Math.sin(rx), cy = Math.cos(ry), sy = Math.sin(ry), cz = Math.cos(rz), sz = Math.sin(rz);
-    // Rotation matrix Rz·Ry·Rx
-    var m00 = cz * cy, m01 = cz * sy * sx - sz * cx, m02 = cz * sy * cx + sz * sx;
-    var m10 = sz * cy, m11 = sz * sy * sx + cz * cx, m12 = sz * sy * cx - cz * sx;
-    var m20 = -sy, m21 = cy * sx, m22 = cy * cx;
-    // Breathing, folding and pinching (contracting, expanding, hourglasses and funnels)
-    var bA = 1 + 0.12 * Math.sin(wv[4] * tt + ph[4]), bW = 1 - 0.1 * Math.sin(wv[4] * tt + ph[4]) + 0.08 * Math.sin(wv[5] * tt + ph[5]);
-    var foldA = tw * 1.3 * Math.sin(wv[5] * tt + ph[6]), foldB = tw * 0.9 * Math.sin(wv[1] * tt + ph[7]);
-    // Irregular, shifting outline: lobes round the edge, a crescent bend, and slow swells through the sheet
-    var lob1 = 0.75 * wv[0] * tt + ph[10], lob2 = -0.6 * wv[2] * tt + ph[11], lobA = 0.08 + 0.12 * tw;
-    var cres = tw * 0.9 * Math.sin(wv[1] * 0.8 * tt + ph[3] + 1), sw1 = wv[4] * 0.9 * tt, sw2 = wv[5] * 0.8 * tt;
-    var pinch = tw * 0.22 * Math.max(0, Math.sin(wv[3] * 0.7 * tt + ph[8])), pinchAt = 0.5 * Math.sin(wv[2] * 0.5 * tt + ph[9]);
-    // Where this turn starts: the tip of the flock on the inside of the turn
-    var kx = S.kap[fi * 3], ky = S.kap[fi * 3 + 1], kz = S.kap[fi * 3 + 2], km = Math.hypot(kx, ky, kz);
-    var ka = (kx * m00 + ky * m10 + kz * m20) / (km + 1e-6), side = Math.tanh(4 * ka) * km / (km + 1.2);
-    var Ox = m00 * side * La / 2, Oy = m10 * side * La / 2, Oz = m20 * side * La / 2;
-    var tblN = S.N, pos = S.pos, hd = S.hd, cxF = S.cx;
-    var cw = 0.25 + 0.4 * tw, tm = tt * state.morph * 0.85;            // current strength and speed
-    for (i = 0; i < n; i++) {
-      var a0 = P.a[i], b0 = P.b[i], c0 = P.c[i];
-      // Currents inside the flock: travelling waves that keep pushing parts of it out, stretching
-      // them, pouring birds from one side to the other and pulling them back in. Two passes of
-      // smooth warping, so the outline never settles into one shape.
-      var a1 = a0 + cw * (0.30 * Math.sin(1.7 * b0 + 1.1 * c0 + 1.3 * tm + ph[12]) + 0.18 * Math.sin(2.9 * b0 - 2.2 * c0 - 1.9 * tm + ph[13]));
-      var b1 = b0 + cw * (0.34 * Math.sin(1.5 * a1 - 0.9 * c0 - 1.1 * tm + ph[14]) + 0.16 * Math.sin(3.1 * a1 + 2.4 * tm + ph[15]));
-      var c1 = c0 + cw * 0.5 * Math.sin(2.0 * a1 + 1.6 * b1 + 1.5 * tm + ph[16]);
-      var a = a1 + cw * 0.15 * Math.sin(3.3 * b1 - 0.7 * c1 + 2.6 * tm + ph[17]);
-      var b = b1 + cw * 0.15 * Math.sin(3.7 * a1 - 2.8 * tm + ph[18]);
-      var c = c1 + cw * 0.2 * Math.sin(2.7 * b1 - 2.1 * tm + ph[19]);
-      var wp = 1 - pinch * Math.exp(-((a - pinchAt) * (a - pinchAt)) / 0.12);
-      var jit = 0.0025 * U, wt = P.w[i] * tt + P.ph[i];
-      var th = P.th[i], lr = 1 + lobA * (Math.sin(3 * th + lob1) + 0.25 * Math.sin(5 * th + lob2) + 0.6 * Math.sin(2 * th - lob2)); lr = Math.min(lr, 1.3);
-      var lx = a * La / 2 * bA * lr + La * 0.07 * Math.sin(2.3 * b + 1.7 * c + sw1 + ph[1]) + jit * Math.sin(wt);
-      var lz = b * Wb / 2 * bW * wp * lr + cres * (a * a - 0.3) * Wb * 0.7 + Wb * 0.18 * Math.sin(1.9 * a + 2.6 * c + sw2 + ph[2]) + jit * Math.sin(wt * 1.3 + 2);
-      var ly = -(c * Tc / 2 + foldA * (b * b - 0.33) * Tc * 1.7 + foldB * a * b * Tc * 0.5 + Tc * 0.9 * tw * Math.sin(2.2 * a + 1.4 * b - sw1 * 1.3 + ph[5])) + jit * Math.sin(wt * 0.8 + 4);
-      // Most of the flock's length trails along the route (birds behind follow the leaders' path), so it
-      // bends into a ribbon through each swoop; the rest stays in the tilting sheet
-      var lxs = lx * (1 - FOLLOW), tf = -lx * FOLLOW / v;
-      var ox = m00 * lxs + m01 * ly + m02 * lz, oy = m10 * lxs + m11 * ly + m12 * lz, oz = m20 * lxs + m21 * ly + m22 * lz;
-      // Equal-radius turning with a delay: until the turn reaches this bird, it carries straight on
-      var tau = Math.hypot(ox - Ox, oy - Oy, oz - Oz) / cs;
-      var j = (tt - tau - tf - T0) / DT, j0 = clamp(j | 0, 0, tblN - 2), f = clamp(j - j0, 0, 1), j1 = j0 + 1;
-      var hx = hd[j0 * 3] + (hd[j1 * 3] - hd[j0 * 3]) * f, hy = hd[j0 * 3 + 1] + (hd[j1 * 3 + 1] - hd[j0 * 3 + 1]) * f, hz = hd[j0 * 3 + 2] + (hd[j1 * 3 + 2] - hd[j0 * 3 + 2]) * f;
-      var vt = v * tau;
-      var px = ox + pos[j0 * 3] + (pos[j1 * 3] - pos[j0 * 3]) * f + vt * hx;
-      var py = oy + pos[j0 * 3 + 1] + (pos[j1 * 3 + 1] - pos[j0 * 3 + 1]) * f + vt * hy;
-      var pz = oz + pos[j0 * 3 + 2] + (pos[j1 * 3 + 2] - pos[j0 * 3 + 2]) * f + vt * hz;
-      // Perspective
-      var kk = F / Math.max(0.6, F + pz);
-      P.tx[i] = cxF + (px - cxF) * kk; P.ty[i] = 0.5 + (py - 0.5) * kk; P.sc[i] = kk;
-    }
-  }
-  function snapToTargets() { for (var i = 0; i < P.n; i++) { P.x[i] = P.tx[i]; P.y[i] = P.ty[i]; P.vx[i] = 0; P.vy[i] = 0; } }
-  // Each bird trails its place on a soft spring (behavioural inertia)
-  function step(dt) {
-    for (var i = 0, n = P.n; i < n; i++) {
-      P.vx[i] += (P.k[i] * (P.tx[i] - P.x[i]) - P.d[i] * P.vx[i]) * dt;
-      P.vy[i] += (P.k[i] * (P.ty[i] - P.y[i]) - P.d[i] * P.vy[i]) * dt;
-      P.x[i] += P.vx[i] * dt; P.y[i] += P.vy[i] * dt;
-    }
-  }
-
-  // ---------- Drawing ----------
-  var view = $("view"), grainTile = null;
-  function makeGrain() {
-    var c = document.createElement("canvas"); c.width = c.height = 256;
-    var g = c.getContext("2d"), img = g.createImageData(256, 256), d = img.data, R = rng(99);
-    for (var i = 0; i < 65536; i++) { var v = ((R() + R()) * 127.5) | 0; d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = v; d[i * 4 + 3] = 255; }
-    g.putImageData(img, 0, 0); grainTile = c;
-  }
-  function drawDots(g, W, H, s) {
-    var dc = hexToRgb(state.dot), n = P.n, base = Math.max(0.4, state.dotSize * Math.max(0.6, H / 1080) * 1.3), groups = [0.3, 0.5, 0.7, 0.9], i;
-    for (var gi = 0; gi < 4; gi++) {
-      var lo = gi === 0 ? 0 : (groups[gi - 1] + groups[gi]) / 2, hi = gi === 3 ? 9 : (groups[gi] + groups[gi + 1]) / 2;
-      g.beginPath();
-      for (i = 0; i < n; i++) {
-        var a = P.al[i] * 0.8; if (a < lo || a >= hi) continue;
-        var px = P.x[i] * s, py = P.y[i] * s;
-        if (px < -10 || py < -10 || px > W + 10 || py > H + 10) continue;
-        var r = base * P.sc[i] * 0.95;
-        g.moveTo(px + r, py); g.arc(px, py, r, 0, TAU);
-      }
-      g.fillStyle = "rgba(" + dc[0] + "," + dc[1] + "," + dc[2] + "," + groups[gi] + ")"; g.fill();
-    }
-  }
-  function draw(c2, W, H) {
-    var g = c2.getContext("2d"), s = H;
-    g.globalCompositeOperation = "source-over"; g.globalAlpha = 1;
-    g.fillStyle = state.bg; g.fillRect(0, 0, W, H);
-    drawDots(g, W, H, s);
-    if (state.grain > 0 && grainTile) {
-      g.save(); g.globalAlpha = state.grain; g.globalCompositeOperation = "overlay";
-      var ox = (Math.random() * 256) | 0, oy = (Math.random() * 256) | 0;
-      g.translate(-ox, -oy); g.fillStyle = g.createPattern(grainTile, "repeat"); g.fillRect(ox, oy, W, H); g.restore();
-    }
-  }
-
-  // ---------- Layout ----------
-  var stage = $("stage"), recording = null;
-  function layout() {
-    var sz = SIZES[state.size], r = stage.getBoundingClientRect();
-    var pad = r.width < 500 ? 12 : 32, aw = Math.max(80, r.width - pad * 2), ah = Math.max(80, r.height - pad * 2), sc = Math.min(aw / sz[0], ah / sz[1]);
-    var w = Math.round(sz[0] * sc), h = Math.round(sz[1] * sc);
-    view.style.width = w + "px"; view.style.height = h + "px";
-    if (!recording) { var dpr = Math.min(window.devicePixelRatio || 1, 2); view.width = Math.round(w * dpr); view.height = Math.round(h * dpr); }
-  }
-
-  // ---------- Playback ----------
-  var t = 0, playing = !window.matchMedia("(prefers-reduced-motion: reduce)").matches, last = performance.now();
-  function setPlaying(p) {
-    playing = p; $("play").setAttribute("aria-label", p ? "Pause" : "Play");
-    $("play-icon").innerHTML = p ? '<rect x="2" y="1" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="8.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/>' : '<path d="M3 1.5v11l9.5-5.5z" fill="currentColor"/>';
-  }
-  function resetLoop() { t = 0; computeTargets(0); snapToTargets(); }
-  function seek(tt) { t = clamp(tt, 0, state.duration - 0.001); computeTargets(t); snapToTargets(); draw(view, view.width, view.height); updateHead(); }
-  function updateHead() {
-    var f = t / state.duration; $("playhead").style.left = "calc(" + (f * 100) + "% - 1px)"; $("progress").style.width = (f * 100) + "%";
-    $("scrub").value = Math.round(f * 1000); $("time").textContent = t.toFixed(1) + " s";
-  }
-  function frame(now) {
-    var dt = Math.min(1 / 30, (now - last) / 1000); last = now;
-    if (recording) dt = 1 / 60;
-    if (playing) {
-      t += dt;
-      if (t >= state.duration) {
-        if (recording) { finishRecording(); setPlaying(false); seek(state.duration - 0.001); requestAnimationFrame(frame); return; }
-        resetLoop();
-      }
-      computeTargets(t);
-      step(dt / 2); step(dt / 2);
-      draw(view, view.width, view.height); updateHead();
-    }
-    requestAnimationFrame(frame);
-  }
-
-  // ---------- Controls ----------
-  function pct(v) { return Math.round(v * 100) + "%"; }
-  var sliders = [
-    ["s-count", "count", function (v) { return Math.round(v); }, "particles"],
-    ["s-size", "dotSize", function (v) { return v.toFixed(2); }],
-    ["s-fsize", "flockSize", pct, "scene"], ["s-flow", "twist", pct], ["s-morph", "morph", function (v) { return v.toFixed(1) + "×"; }, "scene"],
-    ["s-len", "duration", function (v) { return v.toFixed(1) + " s"; }, "length"],
-    ["s-turn", "turning", pct, "scene"], ["s-wave", "spread", pct, "scene"]
-  ];
-  function syncUI() {
-    $("c-bg").value = state.bg; $("c-dot").value = state.dot; $("size").value = state.size;
-    sliders.forEach(function (s) { $(s[0]).value = state[s[1]]; $("o" + s[0].slice(1)).textContent = s[2](state[s[1]]); });
-  }
-  sliders.forEach(function (s) {
-    $(s[0]).addEventListener("input", function (e) {
-      var v = parseFloat(e.target.value), old = state[s[1]]; state[s[1]] = v; $("o" + s[0].slice(1)).textContent = s[2](v);
-      if (s[3] === "particles") { buildParticles(); computeTargets(t); snapToTargets(); }
-      if (s[3] === "scene") buildScene();
-      if (s[3] === "length") { t = t / old * v; buildScene(); }                 // same route, flown faster or slower
-      if (!playing) seek(t);
+    Object.keys(frames).forEach(function (k) { frames[k].hidden = k !== id; });
+    document.querySelectorAll("nav a").forEach(function (a) {
+      if (a.dataset.tool === id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
     });
-  });
-  $("c-bg").addEventListener("input", function (e) { state.bg = e.target.value; if (!playing) seek(t); });
-  $("c-dot").addEventListener("input", function (e) { state.dot = e.target.value; if (!playing) seek(t); });
-  $("reseed").addEventListener("click", function () { state.seed = (Math.random() * 1e9) | 0; buildScene(); buildParticles(); computeTargets(t); snapToTargets(); if (!playing) seek(t); });
-  $("size").addEventListener("change", function (e) { state.size = e.target.value; buildScene(); layout(); if (!playing) seek(t); else { computeTargets(t); snapToTargets(); } });
-  $("play").addEventListener("click", function () { if (!playing && t >= state.duration - 0.01) resetLoop(); setPlaying(!playing); last = performance.now(); });
-  $("restart").addEventListener("click", function () { resetLoop(); if (!playing) seek(0); });
-  $("scrub").addEventListener("input", function (e) { if (playing) setPlaying(false); seek(e.target.value / 1000 * state.duration); });
-
-  // ---------- Saving ----------
-  var downloads = null;
-  function status(m) { $("status").textContent = m; }
-  $("record").disabled = true; $("snap").disabled = true;
-  (async function () {
-    try { downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null; } catch (_) { downloads = null; }
-    if (!downloads && !(window.claude && window.claude.use)) {
-      downloads = { save: function (req) { return new Promise(function (res) {
-        var blob = req.data instanceof Blob ? req.data : new Blob([req.data]), url = URL.createObjectURL(blob), a = document.createElement("a");
-        a.href = url; a.download = req.filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 4000); res({ status: "saved" });
-      }); } };
-    }
-    if (downloads) { $("snap").disabled = false; $("record").disabled = !(window.MediaRecorder && view.captureStream); if ($("record").disabled) status("Video recording isn’t supported in this browser. Frames can still be saved."); }
-    else status("Saving files isn’t available in this view.");
-  })();
-  function saveErr(e) {
-    var c = e && e.code;
-    status(c === "declined" ? "Save cancelled." : c === "rate_limited" ? "A save prompt is already open. Finish it, then try again." : c === "too_large" ? "That file is too large to save here." : "Saving isn’t available in this view.");
+    document.title = TOOLS[id].title + " · Murmuration";
   }
-  $("snap").addEventListener("click", function () {
-    if (!downloads) return;
-    var sz = SIZES[state.size], c = document.createElement("canvas"); c.width = sz[0]; c.height = sz[1];
-    draw(c, sz[0], sz[1]);
-    c.toBlob(function (blob) {
-      status("Choose where to save the PNG.");
-      downloads.save({ filename: "murmuration-" + sz[0] + "x" + sz[1] + ".png", data: blob }).then(function () { status("Frame saved."); }, saveErr);
-    }, "image/png");
-  });
-  var chunks = [];
-  $("record").addEventListener("click", function () {
-    if (!downloads || recording) return;
-    var sz = SIZES[state.size];
-    view.width = sz[0]; view.height = sz[1];
-    var mime = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"].filter(function (m) { return MediaRecorder.isTypeSupported(m); })[0];
-    chunks = [];
-    recording = new MediaRecorder(view.captureStream(60), mime ? { mimeType: mime, videoBitsPerSecond: 14000000 } : undefined);
-    recording.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
-    recording.onstop = function () {
-      var blob = new Blob(chunks, { type: "video/webm" });
-      recording = null; layout(); seek(t); $("record").disabled = false; $("record").textContent = "Record video (WebM)";
-      status("Choose where to save the video.");
-      downloads.save({ filename: "murmuration-" + sz[0] + "x" + sz[1] + ".webm", data: blob }).then(function () { status("Video saved."); }, saveErr);
-    };
-    resetLoop(); setPlaying(true); last = performance.now(); recording.start(250);
-    $("record").disabled = true; $("record").textContent = "Recording…";
-    status("Recording the flight (" + state.duration.toFixed(1) + " s). Keep this tab visible.");
-  });
-  function finishRecording() { if (recording && recording.state !== "inactive") recording.stop(); }
-
-  // ---------- Start ----------
-  makeGrain(); buildScene(); buildParticles(); syncUI(); layout(); setPlaying(playing);
-  if (playing) resetLoop(); else seek(state.duration * 0.5);
-  new ResizeObserver(function () { layout(); if (!playing) seek(t); }).observe(stage);
-  requestAnimationFrame(function (n) { last = n; frame(n); });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
 })();
 </script>
 </body>
