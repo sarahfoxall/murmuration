@@ -2,6 +2,8 @@
 
 **Try it:** https://sarahfoxall.github.io/murmuration/
 
+Also in this repo: [Flock still](#flock-still), for static murmuration images.
+
 A starling murmuration you can shape and export. The flock swoops in from the left on long, broad arcs, morphing gradually as it crosses the frame, and leaves on the right. The motion is built on field research into real starling flocks.
 
 ## Use it
@@ -42,6 +44,19 @@ Everything lives in `index.html`: styles and the control panel at the top, the a
 - `buildParticles`: where each bird sits in the sheet.
 - `computeTargets`: the sheet's orientation and shape at a given moment, the turn delay for each bird, and perspective.
 - `state` at the top of the script: the default settings.
+
+## Flock still
+
+**Try it:** https://sarahfoxall.github.io/murmuration/still/
+
+A companion tool for static murmuration images for slides, social and web, at 1920 × 1080. It lives in `still/index.html` and is also a single file.
+
+- **Shape:** five starting forms (Crescent, Sail, Ribbon, Ring, Cloud), then Width, Height, Bend, Twist, Fold, Viewing angle, Density balance and Edge softness.
+- **Dots:** Flock size, Dot size and Depth shading (dots further back fade).
+- **Placement:** position, rotation and horizontal flip.
+- **Colour:** dot and background colours, two presets, or a transparent background.
+- **Variation:** New variation reshuffles the birds. Save preset and Load preset store a look as a .json file.
+- **Export:** PNG at 1× or 2×, or SVG, optionally without the background and cropped to the flock.
 
 ## References
 

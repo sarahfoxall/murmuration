@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flock still</title>
+<style>
+:root {
+  color-scheme: light;
+  --ground: #F0EEED; --panel: #FFFFFF; --ink: #201F1D; --ink-muted: #6B665E; --line: rgba(32,31,29,.13);
+  --stage: #E4E1DF; --accent: #0C505D; --accent-hover: #0D2828; --accent-ink: #FFFFFF; --focus: #0A7891; --field: #F8F7F7;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #0D2828; --panel: #112F2F; --ink: #F8F7F7; --ink-muted: rgba(248,247,247,.72); --line: rgba(255,255,255,.14);
+    --stage: #0A2121; --accent: #C9FEFF; --accent-hover: #E5FFFF; --accent-ink: #0D2828; --focus: #C9FEFF; --field: #0D2828;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #0D2828; --panel: #112F2F; --ink: #F8F7F7; --ink-muted: rgba(248,247,247,.72); --line: rgba(255,255,255,.14);
+  --stage: #0A2121; --accent: #C9FEFF; --accent-hover: #E5FFFF; --accent-ink: #0D2828; --focus: #C9FEFF; --field: #0D2828;
+}
+*, *::before, *::after { box-sizing: inherit; }
+[hidden] { display: none !important; }
+html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+body { height: 100%; margin: 0; background: var(--ground); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 340px; height: 100%; }
+.stagewrap { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; background: var(--stage); }
+.stage { position: relative; display: flex; align-items: center; justify-content: center; min-height: 0; overflow: hidden; }
+.frame { line-height: 0; box-shadow: 0 1px 2px rgba(13,40,40,.08), 0 8px 32px rgba(13,40,40,.12); }
+.frame canvas { display: block; }
+.timeline { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 20px 16px; }
+.phases { position: relative; height: 32px; }
+.phases input { position: absolute; inset: 0; width: 100%; margin: 0; accent-color: var(--focus); opacity: 0; cursor: pointer; z-index: 2; }
+.track { position: absolute; left: 0; right: 0; top: 13px; height: 6px; border-radius: 3px; display: flex; overflow: hidden; background: var(--line); }
+.track span { height: 100%; }
+.track .p-in { background: rgba(10,120,145,.55); }
+.track .p-hold { background: rgba(10,120,145,.85); }
+.track .p-out { background: rgba(10,120,145,.55); }
+.labels { position: absolute; left: 0; right: 0; top: 22px; display: flex; font-size: 11px; color: var(--ink-muted); pointer-events: none; }
+.labels span { overflow: hidden; white-space: nowrap; }
+.playhead { position: absolute; top: 6px; width: 2px; height: 20px; background: var(--ink); border-radius: 1px; pointer-events: none; z-index: 1; }
+.phases:focus-within .track { outline: 2px solid var(--focus); outline-offset: 3px; }
+.time { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; color: var(--ink-muted); min-width: 64px; text-align: right; }
+.panel { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; min-height: 0; }
+.panel header { padding: 22px 22px 6px; }
+.panel h1 { font-weight: 400; font-size: 24px; line-height: 1.15; letter-spacing: -.02em; margin: 0 0 4px; }
+.panel header p { margin: 0; color: var(--ink-muted); font-size: 13px; }
+section { padding: 16px 22px 18px; border-top: 1px solid var(--line); }
+section:first-of-type { border-top: 0; }
+h2 { font-size: 13px; font-weight: 600; margin: 0 0 12px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.label, label { font-size: 13px; }
+.swatch { position: relative; width: 74px; height: 36px; border-radius: 8px; border: 1px solid var(--line); overflow: hidden; }
+.swatch input { position: absolute; inset: -8px; width: calc(100% + 16px); height: calc(100% + 16px); border: 0; padding: 0; cursor: pointer; background: none; }
+.swatch:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.dotpresets { display: flex; gap: 8px; margin-bottom: 12px; }
+.dotpreset { flex: 1; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--field); color: var(--ink); font-size: 12.5px; font-weight: 500; cursor: pointer; text-align: left; }
+.dotpreset .chip { width: 22px; height: 22px; border-radius: 6px; flex: none; display: grid; place-items: center; border: 1px solid var(--line); }
+.dotpreset .chip i { width: 8px; height: 8px; border-radius: 50%; display: block; }
+.dotpreset[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.slider { display: grid; grid-template-columns: 1fr 150px 44px; gap: 10px; align-items: center; margin-bottom: 10px; }
+.slider input { width: 150px; accent-color: var(--focus); }
+.slider output { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; color: var(--ink-muted); text-align: right; }
+select { font: inherit; font-size: 13px; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 8px; height: 36px; padding: 0 10px; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-size: 13px; font-weight: 500; height: 36px; padding: 0 14px; border-radius: 8px; cursor: pointer; border: 1px solid var(--line); background: var(--field); color: var(--ink); }
+button:hover { border-color: var(--ink-muted); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.icon { width: 40px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.check { display: flex; align-items: center; gap: 10px; font-size: 13px; margin-bottom: 10px; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--focus); margin: 0; }
+.status { font-size: 12px; color: var(--ink-muted); margin-top: 10px; min-height: 1.4em; }
+.note { font-size: 12px; color: var(--ink-muted); margin: 0 0 12px; }
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; height: auto; }
+  body { height: auto; }
+  .stagewrap { height: 70vh; min-height: 440px; }
+  .panel { border-left: 0; border-top: 1px solid var(--line); }
+  .timeline { padding: 10px 12px 12px; }
+}
+.stage { background: var(--stage); }
+canvas.checker { background-color: #fff; background-image: linear-gradient(45deg, #ddd 25%, transparent 25%), linear-gradient(-45deg, #ddd 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ddd 75%), linear-gradient(-45deg, transparent 75%, #ddd 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0; }
+@media (max-width: 860px) { .stage { height: 60vh; min-height: 300px; } }
+</style>
+
+</head>
+<body>
+<div class="app">
+  <main class="stage" id="stage" aria-label="Preview">
+    <div class="frame" id="frame"><canvas id="view" width="1920" height="1080" role="img" aria-label="Flock of lime dots"></canvas></div>
+  </main>
+
+  <aside class="panel">
+    <header>
+      <h1>Flock still</h1>
+      <p>Static murmuration images for slides, social and web, at 1920 × 1080.</p>
+    </header>
+
+    <section aria-labelledby="h-shape">
+      <h2 id="h-shape">Shape</h2>
+      <div class="row">
+        <label for="form">Form</label>
+        <select id="form">
+          <option value="crescent">Crescent</option>
+          <option value="sail">Sail</option>
+          <option value="ribbon">Ribbon</option>
+          <option value="ring">Ring</option>
+          <option value="cloud">Cloud</option>
+        </select>
+      </div>
+      <div class="slider"><label for="s-w">Width</label><input type="range" id="s-w" min="0.1" max="1.2" step="0.01"><output id="o-w"></output></div>
+      <div class="slider"><label for="s-h">Height</label><input type="range" id="s-h" min="0.05" max="1.2" step="0.01"><output id="o-h"></output></div>
+      <div class="slider"><label for="s-bend">Bend</label><input type="range" id="s-bend" min="-1" max="1" step="0.01"><output id="o-bend"></output></div>
+      <div class="slider"><label for="s-twist">Twist</label><input type="range" id="s-twist" min="0" max="2" step="0.01"><output id="o-twist"></output></div>
+      <div class="slider"><label for="s-fold">Fold</label><input type="range" id="s-fold" min="0" max="1.5" step="0.01"><output id="o-fold"></output></div>
+      <div class="slider"><label for="s-tilt">Viewing angle</label><input type="range" id="s-tilt" min="0" max="85" step="1"><output id="o-tilt"></output></div>
+      <div class="slider"><label for="s-dens">Density balance</label><input type="range" id="s-dens" min="0" max="1" step="0.01"><output id="o-dens"></output></div>
+      <div class="slider"><label for="s-soft">Edge softness</label><input type="range" id="s-soft" min="0" max="1" step="0.01"><output id="o-soft"></output></div>
+    </section>
+
+    <section aria-labelledby="h-dots">
+      <h2 id="h-dots">Dots</h2>
+      <div class="slider"><label for="s-count">Flock size</label><input type="range" id="s-count" min="300" max="20000" step="100"><output id="o-count"></output></div>
+      <div class="slider"><label for="s-size">Dot size</label><input type="range" id="s-size" min="0.5" max="8" step="0.1"><output id="o-size"></output></div>
+      <div class="slider"><label for="s-depth">Depth shading</label><input type="range" id="s-depth" min="0" max="1" step="0.01"><output id="o-depth"></output></div>
+    </section>
+
+    <section aria-labelledby="h-place">
+      <h2 id="h-place">Placement</h2>
+      <div class="slider"><label for="s-x">Horizontal</label><input type="range" id="s-x" min="-0.3" max="1.3" step="0.01"><output id="o-x"></output></div>
+      <div class="slider"><label for="s-y">Vertical</label><input type="range" id="s-y" min="-0.3" max="1.3" step="0.01"><output id="o-y"></output></div>
+      <div class="slider"><label for="s-rot">Rotation</label><input type="range" id="s-rot" min="-180" max="180" step="1"><output id="o-rot"></output></div>
+      <label class="check"><input type="checkbox" id="t-flip">Flip horizontally</label>
+    </section>
+
+    <section aria-labelledby="h-col">
+      <h2 id="h-col">Colour</h2>
+      <div class="dotpresets" id="dotpresets">
+        <button type="button" class="dotpreset" data-dot="#FFFA66" data-bg="#0D2828"><span class="chip" style="background:#0D2828"><i style="background:#FFFA66"></i></span>Citron Highlight</button>
+        <button type="button" class="dotpreset" data-dot="#0C505D" data-bg="#FFFFFF"><span class="chip" style="background:#FFFFFF"><i style="background:#0C505D"></i></span>Teal Shade</button>
+      </div>
+      <div class="row"><span class="label">Dots</span><div class="swatch"><input type="color" id="c-dot" aria-label="Dot colour"></div></div>
+      <div class="row"><span class="label">Background</span><div class="swatch" id="bg-swatch"><input type="color" id="c-bg" aria-label="Background colour"></div></div>
+      <label class="check"><input type="checkbox" id="t-trans">Transparent background</label>
+    </section>
+
+    <section aria-labelledby="h-var">
+      <h2 id="h-var">Variation</h2>
+      <div class="btns">
+        <button type="button" id="reseed">New variation</button>
+        <button type="button" id="save">Save preset</button>
+        <button type="button" id="load">Load preset</button>
+        <input type="file" id="file" accept=".json,application/json" hidden>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-out">
+      <h2 id="h-out">Export</h2>
+      <div class="row">
+        <label for="scale">PNG resolution</label>
+        <select id="scale"><option value="1">1× (frame 1920 × 1080)</option><option value="2">2× (frame 3840 × 2160)</option></select>
+      </div>
+      <label class="check"><input type="checkbox" id="x-nobg" checked>Export without background</label>
+      <label class="check"><input type="checkbox" id="x-crop" checked>Crop to the flock</label>
+      <div class="btns">
+        <button type="button" class="primary" id="png">Export PNG</button>
+        <button type="button" id="svg">Export SVG</button>
+      </div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+    </section>
+  </aside>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var W = 1920, H = 1080;
+  // Each form sets a starting point for the shape controls; everything stays adjustable afterwards
+  var FORMS = {
+    crescent: { w: 0.68, h: 0.46, bend: -0.45, twist: 0.2, fold: 0.95, tilt: 55, dens: 0.75, soft: 0.4, rot: -8 },
+    sail:     { w: 0.55, h: 0.48, bend: 0.3,  twist: 1.1,  fold: 0.75, tilt: 35, dens: 0.35, soft: 0.3 , rot: 0 },
+    ribbon:   { w: 0.85, h: 0.3,  bend: 0.35, twist: 1.6,  fold: 0.4,  tilt: 30, dens: 0.15, soft: 0.1 , rot: 0 },
+    ring:     { w: 0.6,  h: 0.34, bend: 0,    twist: 0.5,  fold: 0.3,  tilt: 68, dens: 0,    soft: 0.1 , rot: 0 },
+    cloud:    { w: 0.58, h: 0.48, bend: 0.2,  twist: 0.4,  fold: 0.9,  tilt: 45, dens: 0.3,  soft: 0.45 , rot: 0 }
+  };
+  var state = { form: "crescent", w: 0.68, h: 0.46, bend: -0.45, twist: 0.2, fold: 0.95, tilt: 55, dens: 0.75, soft: 0.4,
+    count: 12000, size: 1.9, depth: 0.5, x: 0.5, y: 0.5, rot: -8, flip: false,
+    dot: "#FFFA66", bg: "#0D2828", trans: false, seed: 7 };
+
+  function $(id) { return document.getElementById(id); }
+  function rng(seed) { var s = seed >>> 0 || 1; return function () { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
+  function gauss(R) { var u = R() || 1e-9, v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.2832 * v); }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  // ---------- The flock: a thin sheet along a curve, twisting and folding, projected flat ----------
+  var pts = null;   // {x, y, z} in output pixels at 1920 x 1080
+  function generate() {
+    var R = rng(state.seed), n = state.count, f = state.form, i, k;
+    var ph = R() * 6.2832, ph2 = R() * 6.2832;
+    var headPow = 0.6 + state.dens * 2.4;
+    // Width of the sheet along its length (s = 0 head, 1 tail)
+    function width(s) {
+      if (f === "crescent") return 0.09 + 0.42 * Math.pow(s, 0.7);
+      if (f === "sail") return 0.1 + 0.26 * Math.sin(Math.PI * Math.min(1, 0.15 + s * 0.85));
+      if (f === "ribbon") return 0.07 + 0.07 * Math.sin(Math.PI * s);
+      if (f === "ring") return 0.07;
+      return 0.36 * Math.pow(Math.sin(Math.PI * s), 0.5) + 0.04;   // cloud
+    }
+    // Centre line in 3D
+    function centre(s) {
+      if (f === "ring") { var a = s * 6.2832; return [0.5 * Math.cos(a), 0.5 * Math.sin(a), 0.06 * Math.sin(a * 2 + ph)]; }
+      var x = s - 0.5;
+      return [x, -state.bend * 0.32 * (1 - 4 * x * x) + 0.03 * Math.sin(s * 5 + ph), 0.18 * Math.sin(Math.PI * s + ph2 * 0.3) * (f === "sail" ? 1.6 : 1)];
+    }
+    function norm(v) { var m = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / m, v[1] / m, v[2] / m]; }
+    function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+    // Birds spread evenly over the sheet's area, weighted towards the head by Density balance
+    var wmax = 0; for (k = 0; k <= 200; k++) { var ss = k / 200; wmax = Math.max(wmax, width(ss) * (f === "ring" ? 1 : (1 + 9 * state.dens * Math.pow(1 - ss, 2.6)))); }
+    var px = new Float32Array(n), py = new Float32Array(n), pz = new Float32Array(n);
+    var tilt = state.tilt * Math.PI / 180, ctl = Math.cos(tilt), stl = Math.sin(tilt);
+    var soft = state.soft, twist = state.twist * Math.PI, fold = state.fold;
+    // Cross-section of the sheet: flat up to a crease, then bending sharply away (like folded paper).
+    // Sampled by arc length, so birds stay evenly spread on the sheet and pile up visually where it turns edge-on.
+    var CREASE = { crescent: [-0.15, 0.32], sail: [-0.2, 0.3], ribbon: [0, 0.5], ring: [0, 0.6], cloud: [0.2, 0.38] }[f];
+    var XS = 400, xa = new Float32Array(XS + 1), xb = new Float32Array(XS + 1), ang0 = fold * Math.PI * 0.62;
+    for (k = 1; k <= XS; k++) {
+      var tm = -1 + (k - 0.5) / XS * 2, phi = ang0 * 0.5 * (1 + Math.tanh((tm - CREASE[0]) / CREASE[1]));
+      xa[k] = xa[k - 1] + Math.cos(phi) * 2 / XS; xb[k] = xb[k - 1] + Math.sin(phi) * 2 / XS;
+    }
+    var k0 = XS / 2, a0 = xa[k0], b0 = xb[k0];
+    function section(tt) { var fi = (Math.max(-1, Math.min(1, tt)) + 1) / 2 * XS, j = Math.min(XS - 1, fi | 0), u = fi - j;
+      var a = xa[j] + (xa[j + 1] - xa[j]) * u - a0, b = xb[j] + (xb[j + 1] - xb[j]) * u - b0, over = Math.abs(tt) > 1 ? tt - Math.sign(tt) : 0;
+      return [a + over, b]; }
+    for (i = 0; i < n; i++) {
+      var s, guard = 0;
+      do { s = R(); guard++; } while (guard < 60 && R() * wmax > width(s) * (f === "ring" ? 1 : (1 + 9 * state.dens * Math.pow(1 - s, 2.6))));
+      var tt = R() * 2 - 1;
+      if (soft > 0 && R() < soft * 0.5) tt *= 1 + Math.abs(gauss(R)) * soft * 0.6;   // soft, scattered edges
+      var C = centre(s), C2 = centre(Math.min(1, s + 0.002)), C1 = centre(Math.max(0, s - 0.002));
+      var T = norm([C2[0] - C1[0], C2[1] - C1[1], C2[2] - C1[2]]);
+      // Start with the sheet facing the viewer, then twist it about its own length
+      var Nn = norm([-T[0] * T[2], -T[1] * T[2], 1 - T[2] * T[2]]), Wd = cross(T, Nn);
+      var th = twist * (s - 0.35) + 0.25 * Math.sin(s * 4 + ph2), c = Math.cos(th), sn = Math.sin(th);
+      var Wt = [Wd[0] * c + Nn[0] * sn, Wd[1] * c + Nn[1] * sn, Wd[2] * c + Nn[2] * sn];
+      var Nt = [-Wd[0] * sn + Nn[0] * c, -Wd[1] * sn + Nn[1] * c, -Wd[2] * sn + Nn[2] * c];
+      var w = width(s) * (1 + 0.12 * Math.sin(s * 7 + ph)); tt *= 1 + 0.14 * Math.sin(s * 11 + ph2 + (tt > 0 ? 0 : 2));
+      var sec = section(tt), aw = sec[0] * w, bw = sec[1] * w + w * 0.04 * Math.sin(s * 9 + tt * 2 + ph);
+      var thick = gauss(R) * 0.003 * (1 + soft * 3 + 9 * s * soft);
+      var P0 = [C[0] + Wt[0] * aw + Nt[0] * (bw + thick), C[1] + Wt[1] * aw + Nt[1] * (bw + thick), C[2] + Wt[2] * aw + Nt[2] * (bw + thick)];
+      // View from an angle: tilt the whole sheet away from the viewer
+      px[i] = P0[0]; py[i] = P0[1] * ctl - P0[2] * stl; pz[i] = P0[1] * stl + P0[2] * ctl;
+    }
+    // Measure the body of the flock (ignoring stray outliers) so Width and Height match what you see
+    function pctl(arr, p) { var cc = Array.prototype.slice.call(arr).sort(function (a, b) { return a - b; }); return cc[Math.floor(p * (cc.length - 1))]; }
+    var minx = pctl(px, 0.01), maxx = pctl(px, 0.99), miny = pctl(py, 0.01), maxy = pctl(py, 0.99), minz = pctl(pz, 0.02), maxz = pctl(pz, 0.98);
+    var sx = state.w * W / Math.max(1e-6, maxx - minx), sy = state.h * H / Math.max(1e-6, maxy - miny);
+    var mx = (minx + maxx) / 2, my = (miny + maxy) / 2, r = state.rot * Math.PI / 180, cr = Math.cos(r), sr = Math.sin(r);
+    var ox = state.x * W, oy = state.y * H, fl = state.flip ? -1 : 1, zr = Math.max(1e-6, maxz - minz);
+    pts = { n: n, x: new Float32Array(n), y: new Float32Array(n), z: new Float32Array(n) };
+    for (i = 0; i < n; i++) {
+      var lx = (px[i] - mx) * sx * fl, ly = (py[i] - my) * sy;
+      pts.x[i] = ox + lx * cr - ly * sr; pts.y[i] = oy + lx * sr + ly * cr;
+      pts.z[i] = Math.max(-1, Math.min(1, ((pz[i] - minz) / zr) * 2 - 1)) * -1;   // nearer = +1
+    }
+  }
+
+  // Opacity per dot: depth shading fades dots that sit further back
+  function alphaOf(i) { return 1 - state.depth * 0.6 * (1 - (pts.z[i] + 1) / 2); }
+  var BUCKETS = [0.4, 0.55, 0.7, 0.85, 1];
+  function bucketOf(a) { for (var b = 0; b < BUCKETS.length - 1; b++) if (a < (BUCKETS[b] + BUCKETS[b + 1]) / 2) return b; return BUCKETS.length - 1; }
+
+  // ---------- Drawing ----------
+  function draw(canvas, scale, region, noBg) {
+    region = region || { x: 0, y: 0, w: W, h: H };
+    var g = canvas.getContext("2d"), cw = Math.ceil(region.w * scale), ch = Math.ceil(region.h * scale);
+    canvas.width = cw; canvas.height = ch;
+    g.clearRect(0, 0, cw, ch);
+    if (!state.trans && !noBg) { g.fillStyle = state.bg; g.fillRect(0, 0, cw, ch); }
+    var r = state.size / 2 * scale, n = pts.n, i, b;
+    var paths = BUCKETS.map(function () { return new Path2D(); });
+    for (i = 0; i < n; i++) {
+      var x = (pts.x[i] - region.x) * scale, y = (pts.y[i] - region.y) * scale;
+      if (x < -r || y < -r || x > cw + r || y > ch + r) continue;
+      b = bucketOf(state.depth > 0 ? alphaOf(i) : 1);
+      paths[b].moveTo(x + r, y); paths[b].arc(x, y, r, 0, 6.2832);
+    }
+    g.fillStyle = state.dot;
+    for (b = 0; b < BUCKETS.length; b++) { g.globalAlpha = BUCKETS[b]; g.fill(paths[b]); }
+    g.globalAlpha = 1;
+  }
+  var view = $("view"), stage = $("stage");
+  function layout() {
+    var r = stage.getBoundingClientRect(), pad = r.width < 500 ? 12 : 32;
+    var sc = Math.min((r.width - pad * 2) / W, (r.height - pad * 2) / H);
+    view.style.width = Math.round(W * sc) + "px"; view.style.height = Math.round(H * sc) + "px";
+  }
+  var pending = false;
+  function render() {
+    if (pending) return; pending = true;
+    requestAnimationFrame(function () {
+      pending = false; generate();
+      draw(view, Math.min(window.devicePixelRatio || 1, 1));
+      view.classList.toggle("checker", state.trans);
+    });
+  }
+
+  // ---------- Controls ----------
+  function pct(v) { return Math.round(v * 100) + "%"; }
+  var sliders = [
+    ["s-w", "w", pct], ["s-h", "h", pct], ["s-bend", "bend", function (v) { return (v > 0 ? "+" : "") + Math.round(v * 100); }],
+    ["s-twist", "twist", function (v) { return (v / 2).toFixed(2) + " turn"; }], ["s-fold", "fold", pct], ["s-tilt", "tilt", function (v) { return Math.round(v) + "°"; }], ["s-dens", "dens", pct], ["s-soft", "soft", pct],
+    ["s-count", "count", function (v) { return Math.round(v).toLocaleString(); }], ["s-size", "size", function (v) { return v.toFixed(1) + " px"; }],
+    ["s-depth", "depth", pct], ["s-x", "x", pct], ["s-y", "y", pct], ["s-rot", "rot", function (v) { return Math.round(v) + "°"; }]
+  ];
+  function syncUI() {
+    $("form").value = state.form; $("t-flip").checked = state.flip; $("t-trans").checked = state.trans;
+    $("c-dot").value = state.dot; $("c-bg").value = state.bg; $("bg-swatch").style.opacity = state.trans ? 0.4 : 1;
+    Array.prototype.forEach.call(document.querySelectorAll(".dotpreset"), function (b) { b.setAttribute("aria-pressed", String(state.dot.toUpperCase() === b.dataset.dot)); });
+    sliders.forEach(function (s) { $(s[0]).value = state[s[1]]; $("o" + s[0].slice(1)).textContent = s[2](state[s[1]]); });
+  }
+  sliders.forEach(function (s) {
+    $(s[0]).addEventListener("input", function (e) { state[s[1]] = parseFloat(e.target.value); $("o" + s[0].slice(1)).textContent = s[2](state[s[1]]); render(); });
+  });
+  $("form").addEventListener("change", function (e) {
+    state.form = e.target.value; var p = FORMS[state.form];
+    for (var k in p) state[k] = p[k];
+    syncUI(); render();
+  });
+  $("t-flip").addEventListener("change", function (e) { state.flip = e.target.checked; render(); });
+  $("t-trans").addEventListener("change", function (e) { state.trans = e.target.checked; syncUI(); render(); });
+  $("c-dot").addEventListener("input", function (e) { state.dot = e.target.value; syncUI(); render(); });
+  // Dot colour presets: each one also sets the background it's designed for (Teal Shade dots sit on white)
+  Array.prototype.forEach.call(document.querySelectorAll(".dotpreset"), function (b) {
+    b.addEventListener("click", function () { state.dot = b.dataset.dot; state.bg = b.dataset.bg; syncUI(); render(); });
+  });
+  $("c-bg").addEventListener("input", function (e) { state.bg = e.target.value; render(); });
+  $("reseed").addEventListener("click", function () { state.seed = (Math.random() * 1e9) | 0; render(); });
+
+  // ---------- Saving ----------
+  var downloads = null;
+  function status(m) { $("status").textContent = m; }
+  ["png", "svg", "save"].forEach(function (id) { $(id).disabled = true; });
+  (async function () {
+    try { downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null; } catch (_) { downloads = null; }
+    if (!downloads && !(window.claude && window.claude.use)) {
+      downloads = { save: function (req) { return new Promise(function (res) {
+        var blob = req.data instanceof Blob ? req.data : new Blob([req.data]), url = URL.createObjectURL(blob), a = document.createElement("a");
+        a.href = url; a.download = req.filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 4000); res({ status: "saved" });
+      }); } };
+    }
+    if (downloads) ["png", "svg", "save"].forEach(function (id) { $(id).disabled = false; });
+    else status("Saving files isn’t available in this view. Loading presets still works.");
+  })();
+  function saveErr(e) {
+    var c = e && e.code;
+    status(c === "declined" ? "Save cancelled." : c === "rate_limited" ? "A save prompt is already open. Finish it, then try again." : c === "too_large" ? "That file is too large to save here." : "Saving isn’t available in this view.");
+  }
+  function save(name, data, done) { status("Choose where to save " + name + "."); downloads.save({ filename: name, data: data }).then(function () { status(done); }, saveErr); }
+  function exportRegion() {
+    if (!$("x-crop").checked) return { x: 0, y: 0, w: W, h: H };
+    var pad = state.size / 2 + 2, minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
+    for (var i = 0; i < pts.n; i++) {
+      var x = pts.x[i], y = pts.y[i];
+      if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+    }
+    minx = Math.floor(minx - pad); miny = Math.floor(miny - pad);
+    return { x: minx, y: miny, w: Math.ceil(maxx + pad) - minx, h: Math.ceil(maxy + pad) - miny };
+  }
+  $("png").addEventListener("click", function () {
+    if (!downloads) return;
+    var sc = parseInt($("scale").value, 10), c = document.createElement("canvas");
+    generate(); var reg = exportRegion();
+    draw(c, sc, reg, $("x-nobg").checked);
+    c.toBlob(function (blob) { save("flock-" + c.width + "x" + c.height + ".png", blob, "PNG saved (" + c.width + " × " + c.height + ")."); }, "image/png");
+  });
+  $("svg").addEventListener("click", function () {
+    if (!downloads) return;
+    generate();
+    var reg = exportRegion(), crop = $("x-crop").checked;
+    var r = (state.size / 2).toFixed(2), groups = BUCKETS.map(function () { return []; }), i;
+    for (i = 0; i < pts.n; i++) {
+      var x = pts.x[i] - reg.x, y = pts.y[i] - reg.y; if (!crop && (x < -10 || y < -10 || x > W + 10 || y > H + 10)) continue;
+      groups[bucketOf(state.depth > 0 ? alphaOf(i) : 1)].push('<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r + '"/>');
+    }
+    var out = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + reg.w + '" height="' + reg.h + '" viewBox="0 0 ' + reg.w + ' ' + reg.h + '">'];
+    if (!state.trans && !$("x-nobg").checked) out.push('<rect width="100%" height="100%" fill="' + state.bg + '"/>');
+    groups.forEach(function (gp, b) { if (gp.length) out.push('<g fill="' + state.dot + '" fill-opacity="' + BUCKETS[b] + '">' + gp.join("") + "</g>"); });
+    out.push("</svg>");
+    save("flock-" + reg.w + "x" + reg.h + ".svg", out.join(""), "SVG saved (" + reg.w + " × " + reg.h + ").");
+  });
+  $("save").addEventListener("click", function () { if (downloads) save("flock-preset.json", JSON.stringify(state, null, 2), "Preset saved."); });
+  $("load").addEventListener("click", function () { $("file").click(); });
+  $("file").addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      try {
+        var d = JSON.parse(rd.result), hex = /^#[0-9a-fA-F]{6}$/;
+        if (!FORMS[d.form]) throw 0;
+        state.form = d.form;
+        sliders.forEach(function (s) { var inp = $(s[0]); if (typeof d[s[1]] === "number" && isFinite(d[s[1]])) state[s[1]] = clamp(d[s[1]], parseFloat(inp.min), parseFloat(inp.max)); });
+        if (hex.test(d.dot)) state.dot = d.dot; if (hex.test(d.bg)) state.bg = d.bg;
+        state.flip = !!d.flip; state.trans = !!d.trans; if (typeof d.seed === "number") state.seed = d.seed;
+        syncUI(); render(); status("Preset loaded.");
+      } catch (_) { status("That file isn’t a flock preset. Choose a .json file saved from this tool."); }
+      e.target.value = "";
+    };
+    rd.readAsText(f);
+  });
+
+  syncUI(); layout(); render();
+  new ResizeObserver(layout).observe(stage);
+})();
+</script>
+</body>
+</html>
