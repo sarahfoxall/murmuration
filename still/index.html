@@ -380,7 +380,7 @@ canvas.checker { background-color: #fff; background-image: linear-gradient(45deg
     var sc = parseInt($("scale").value, 10), c = document.createElement("canvas");
     generate(); var reg = exportRegion();
     draw(c, sc, reg, $("x-nobg").checked);
-    c.toBlob(function (blob) { save("flock-" + c.width + "x" + c.height + ".png", blob, "PNG saved (" + c.width + " × " + c.height + ")."); }, "image/png");
+    c.toBlob(function (blob) { save("murmuration-still-" + c.width + "x" + c.height + ".png", blob, "PNG saved (" + c.width + " × " + c.height + ")."); }, "image/png");
   });
   $("svg").addEventListener("click", function () {
     if (!downloads) return;
@@ -395,9 +395,9 @@ canvas.checker { background-color: #fff; background-image: linear-gradient(45deg
     if (!state.trans && !$("x-nobg").checked) out.push('<rect width="100%" height="100%" fill="' + state.bg + '"/>');
     groups.forEach(function (gp, b) { if (gp.length) out.push('<g fill="' + state.dot + '" fill-opacity="' + BUCKETS[b] + '">' + gp.join("") + "</g>"); });
     out.push("</svg>");
-    save("flock-" + reg.w + "x" + reg.h + ".svg", out.join(""), "SVG saved (" + reg.w + " × " + reg.h + ").");
+    save("murmuration-still-" + reg.w + "x" + reg.h + ".svg", out.join(""), "SVG saved (" + reg.w + " × " + reg.h + ").");
   });
-  $("save").addEventListener("click", function () { if (downloads) save("flock-preset.json", JSON.stringify(state, null, 2), "Preset saved."); });
+  $("save").addEventListener("click", function () { if (downloads) save("murmuration-still-preset.json", JSON.stringify(state, null, 2), "Preset saved."); });
   $("load").addEventListener("click", function () { $("file").click(); });
   $("file").addEventListener("change", function (e) {
     var f = e.target.files && e.target.files[0]; if (!f) return;
