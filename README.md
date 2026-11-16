@@ -2,7 +2,7 @@
 
 **Try it:** https://sarahfoxall.github.io/murmuration/
 
-Also in this repo: [Flock still](#flock-still), for static murmuration images.
+Also in this repo: [Murmuration still](#murmuration-still), for static murmuration images.
 
 A starling murmuration you can shape and export. The flock swoops in from the left on long, broad arcs, morphing gradually as it crosses the frame, and leaves on the right. The motion is built on field research into real starling flocks.
 
@@ -45,7 +45,7 @@ Everything lives in `index.html`: styles and the control panel at the top, the a
 - `computeTargets`: the sheet's orientation and shape at a given moment, the turn delay for each bird, and perspective.
 - `state` at the top of the script: the default settings.
 
-## Flock still
+## Murmuration still
 
 **Try it:** https://sarahfoxall.github.io/murmuration/still/
 
