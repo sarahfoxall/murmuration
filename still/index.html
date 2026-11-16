@@ -145,8 +145,8 @@ canvas.checker { background-color: #fff; background-image: linear-gradient(45deg
     <section aria-labelledby="h-col">
       <h2 id="h-col">Colour</h2>
       <div class="dotpresets" id="dotpresets">
-        <button type="button" class="dotpreset" data-dot="#FFFA66" data-bg="#0D2828"><span class="chip" style="background:#0D2828"><i style="background:#FFFA66"></i></span>Citron Highlight</button>
-        <button type="button" class="dotpreset" data-dot="#0C505D" data-bg="#FFFFFF"><span class="chip" style="background:#FFFFFF"><i style="background:#0C505D"></i></span>Teal Shade</button>
+        <button type="button" class="dotpreset" data-dot="#FFFA66" data-bg="#0D2828"><span class="chip" style="background:#0D2828"><i style="background:#FFFA66"></i></span>Yellow on teal</button>
+        <button type="button" class="dotpreset" data-dot="#0C505D" data-bg="#FFFFFF"><span class="chip" style="background:#FFFFFF"><i style="background:#0C505D"></i></span>Teal on white</button>
       </div>
       <div class="row"><span class="label">Dots</span><div class="swatch"><input type="color" id="c-dot" aria-label="Dot colour"></div></div>
       <div class="row"><span class="label">Background</span><div class="swatch" id="bg-swatch"><input type="color" id="c-bg" aria-label="Background colour"></div></div>
@@ -338,7 +338,7 @@ canvas.checker { background-color: #fff; background-image: linear-gradient(45deg
   $("t-flip").addEventListener("change", function (e) { state.flip = e.target.checked; render(); });
   $("t-trans").addEventListener("change", function (e) { state.trans = e.target.checked; syncUI(); render(); });
   $("c-dot").addEventListener("input", function (e) { state.dot = e.target.value; syncUI(); render(); });
-  // Dot colour presets: each one also sets the background it's designed for (Teal Shade dots sit on white)
+  // Dot colour presets: each one also sets the background it's designed for (Teal on white puts teal dots on white)
   Array.prototype.forEach.call(document.querySelectorAll(".dotpreset"), function (b) {
     b.addEventListener("click", function () { state.dot = b.dataset.dot; state.bg = b.dataset.bg; syncUI(); render(); });
   });
