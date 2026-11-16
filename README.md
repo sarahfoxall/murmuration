@@ -1,5 +1,7 @@
 # Murmuration
 
+**Try it:** https://sarahfoxall.github.io/murmuration/
+
 A starling murmuration you can shape and export. The flock swoops in from the left on long, broad arcs, morphing gradually as it crosses the frame, and leaves on the right. The motion is built on field research into real starling flocks.
 
 ## Use it
